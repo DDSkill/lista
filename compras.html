@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10b981">
+    <title>Lista de Compras Pro</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --danger: #ef4444;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        header {
+            padding: 30px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 { 
+            margin: 0; 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .mic-section {
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            background: var(--card);
+            z-index: 10;
+        }
+
+        #btn-voice {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        }
+
+        #btn-voice.listening {
+            background: var(--danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-badge {
+            display: block;
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .list-container {
+            flex: 1;
+            padding: 0 20px 40px;
+        }
+
+        .category-group { margin-top: 25px; }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        li {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .check-box {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            transition: all 0.2s;
+        }
+
+        .done .check-box {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .qty {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+            background: #ecfdf5;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .item-name {
+            font-weight: 500;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .done .item-name {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .btn-delete {
+            color: #d1d5db;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .btn-delete:hover { color: var(--danger); }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1><i data-lucide="shopping-cart"></i> Lista de compras</h1>
+        <p>Organize seu mercado com voz</p>
+    </header>
+
+    <div class="mic-section">
+        <button id="btn-voice">
+            <i data-lucide="mic" id="mic-icon"></i>
+            <span id="btn-text">Ativar Voz</span>
+        </button>
+        <span id="status-label" class="status-badge">Microfone Inativo</span>
+    </div>
+
+    <div class="list-container" id="list-container">
+        </div>
+</div>
+
+<script>
+    // Configurações e Categorias
+    const CATEGORIAS = {
+        'Hortifrúti': { icon: 'leaf', keywords: ['maçã', 'banana', 'tomate', 'alface', 'cebola', 'batata', 'limão', 'laranja'] },
+        'Açougue': { icon: 'beef', keywords: ['carne', 'frango', 'peixe', 'picanha', 'bife', 'linguiça'] },
+        'Laticínios': { icon: 'milk', keywords: ['leite', 'queijo', 'iogurte', 'manteiga', 'ovos'] },
+        'Padaria': { icon: 'croissant', keywords: ['pão', 'café', 'açúcar', 'biscoito', 'bolo'] },
+        'Limpeza': { icon: 'droplet', keywords: ['detergente', 'sabão', 'álcool', 'cloro', 'papel'] }
+    };
+
+    const NUMEROS = { 'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'três': 3, 'quatro': 4, 'cinco': 5 };
+
+    let shoppingList = JSON.parse(localStorage.getItem('marketList_v7')) || [];
+    let isMicActive = false;
+
+    const btn = document.getElementById('btn-voice');
+    const statusLabel = document.getElementById('status-label');
+    const container = document.getElementById('list-container');
+
+    // Inicializar Voz
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+
+    btn.addEventListener('click', () => {
+        if (!isMicActive) {
+            recognition.start();
+            isMicActive = true;
+            updateUI(true);
+        } else {
+            recognition.stop();
+            isMicActive = false;
+            updateUI(false);
+        }
+    });
+
+    recognition.onend = () => { if (isMicActive) recognition.start(); };
+
+    recognition.onresult = (event) => {
+        const text = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        processInput(text);
+    };
+
+    function processInput(input) {
+        if (input.includes("limpar lista")) {
+            if(confirm("Zerar lista?")) shoppingList = [];
+        } else {
+            const regex = /^(\d+|um|uma|dois|duas|três|quatro|cinco)\s+(.*)/i;
+            const match = input.match(regex);
+            let qtd = 1, nome = input;
+
+            if (match) {
+                qtd = NUMEROS[match[1]] || parseInt(match[1]);
+                nome = match[2];
+            }
+            nome = nome.replace(/^(os|as|o|a|uns|umas)\s+/i, "").trim();
+            if (nome) addItem(nome, qtd);
+        }
+        render();
+    }
+
+    function addItem(nome, quantidade) {
+        const index = shoppingList.findIndex(i => i.nome === nome);
+        if (index > -1) {
+            shoppingList[index].quantidade += quantidade;
+            shoppingList[index].comprado = false;
+        } else {
+            shoppingList.push({ nome, quantidade, comprado: false });
+        }
+        render();
+    }
+
+    function render() {
+        container.innerHTML = '';
+        if (shoppingList.length === 0) {
+            container.innerHTML = '<div class="empty-state">Sua lista está vazia. Comece a falar!</div>';
+        } else {
+            const grouped = shoppingList.reduce((acc, obj) => {
+                const cat = Object.keys(CATEGORIAS).find(c => CATEGORIAS[c].keywords.some(k => obj.nome.includes(k))) || 'Geral';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(obj);
+                return acc;
+            }, {});
+
+            Object.keys(grouped).forEach(cat => {
+                const icon = CATEGORIAS[cat]?.icon || 'package';
+                const section = document.createElement('div');
+                section.className = 'category-group';
+                section.innerHTML = `<div class="category-header"><i data-lucide="${icon}" size="16"></i>${cat}</div>`;
+                
+                const ul = document.createElement('ul');
+                grouped[cat].forEach(item => {
+                    const li = document.createElement('li');
+                    if (item.comprado) li.className = 'done';
+                    li.innerHTML = `
+                        <div class="item-left" onclick="toggleCheck('${item.nome}')">
+                            <div class="check-box"><i data-lucide="check" size="16"></i></div>
+                            <span class="qty">${item.quantidade}x</span>
+                            <span class="item-name">${item.nome}</span>
+                        </div>
+                        <button class="btn-delete" onclick="removeItem('${item.nome}')">
+                            <i data-lucide="trash-2" size="18"></i>
+                        </button>
+                    `;
+                    ul.appendChild(li);
+                });
+                section.appendChild(ul);
+                container.appendChild(section);
+            });
+        }
+        lucide.createIcons(); // Renderiza os ícones novos
+        localStorage.setItem('marketList_v7', JSON.stringify(shoppingList));
+    }
+
+    function toggleCheck(nome) {
+        const i = shoppingList.find(x => x.nome === nome);
+        if (i) i.comprado = !i.comprado;
+        render();
+    }
+
+    function removeItem(nome) {
+        shoppingList = shoppingList.filter(x => x.nome !== nome);
+        render();
+    }
+
+    function updateUI(active) {
+        btn.classList.toggle('listening', active);
+        document.getElementById('btn-text').innerText = active ? 'Parar Microfone' : 'Ativar Voz';
+        statusLabel.innerText = active ? 'OUVINDO ATIVAMENTE...' : 'Microfone Inativo';
+        statusLabel.style.color = active ? 'var(--danger)' : 'var(--text-muted)';
+    }
+
+    render();
+</script>
+</body>
+</html>
